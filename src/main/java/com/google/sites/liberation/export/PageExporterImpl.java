@@ -108,9 +108,11 @@ final class PageExporterImpl implements PageExporter {
     XmlElement body = new XmlElement("body");
     XmlElement table = new XmlElement("table").setAttribute("width", "100%");
     XmlElement row = new XmlElement("tr").setAttribute("valign", "top");
+/*    
     XmlElement sideBar = getSideBar(entry, entryStore);
     row.addElement(new XmlElement("td").addElement(sideBar).setAttribute(
         "width", "150px"));
+*/        
     row.addElement(new XmlElement("td").addXml("&#160;"));
     XmlElement mainDiv = new XmlElement("div");
     mainDiv.setAttribute("class", "hentry " + getType(entry).toString());

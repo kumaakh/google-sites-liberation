@@ -16,6 +16,11 @@
       <id>local</id>
       <url>file://repository</url>
     </repository>
+    <repository>
+      <id>gdata-maven-github</id>
+      <name>Google Gdata Maven Repository</name>
+      <url>https://raw.github.com/eburtsev/gdata-maven/master/</url>
+  </repository>
   </repositories>
   <build>
     <plugins>
@@ -55,9 +60,9 @@
   </build>
   <dependencies>
     <dependency>
-      <groupId>com.google.gdata</groupId>
-      <artifactId>gdata-sites-meta</artifactId>
-      <version>2.0</version>
+      <groupId>com.google.gdata.gdata-java-client</groupId>
+      <artifactId>gdata-sites-meta-2.0</artifactId>
+      <version>1.47.1</version>
     </dependency>
     <dependency>
       <groupId>com.google.gdata</groupId>
@@ -67,7 +72,7 @@
     <dependency>
       <groupId>com.google.apis</groupId>
       <artifactId>google-api-services-oauth2</artifactId>
-      <version>v2-rev93-1.20.0</version>
+      <version>v2-rev120-1.22.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.inject</groupId>
@@ -75,9 +80,9 @@
       <version>4.0</version>
     </dependency>
     <dependency>
-      <groupId>jtidy</groupId>
+      <groupId>net.sf.jtidy</groupId>
       <artifactId>jtidy</artifactId>
-      <version>r820</version>
+      <version>r938</version>
       <optional>false</optional>
     </dependency>
     <dependency>
