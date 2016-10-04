@@ -1,6 +1,7 @@
 package com.atlassian.oauth.client.example;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -22,9 +23,8 @@ public class ConflClientTest {
 		if(client==null)
 		{
 			client= new ConflClient();
-			client.setBaseURL("https://mamigo.atlassian.net/wiki");
 			client.setSpaceKey("OL");
-			client.setAccessToken(null);
+			//all properties are loaded from xml file
 		}
 		if(client.getAccessToken()==null)
 		{
@@ -77,5 +77,4 @@ public class ConflClientTest {
 		assertThat(attIds.size(), is(2));
 		
 	}
-
 }
