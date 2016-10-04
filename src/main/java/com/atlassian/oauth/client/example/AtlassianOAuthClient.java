@@ -151,7 +151,7 @@ public class AtlassianOAuthClient
         try
         {
             OAuthMessage request = accessor.newRequestMessage("POST", url, Collections.<Map.Entry<?, ?>>emptySet());
-            String authHeader=request.getAuthorizationHeader("https://mamigo.atlassian.net/wiki");
+            String authHeader=request.getAuthorizationHeader(baseUrl);
             HttpPost postReq= new HttpPost(url);
             postReq.addHeader("Authorization", authHeader);
             if(disableXSRFCheck) postReq.addHeader("X-Atlassian-Token", "nocheck");

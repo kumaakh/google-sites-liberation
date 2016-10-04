@@ -50,7 +50,7 @@ public class ConflClient
     	return baseURL+"/rest/api/content/"+pageId+"?expand=body.storage";
     }
     private AtlassianOAuthClient client(){
-    	return  new AtlassianOAuthClient(CONSUMER_KEY, CONSUMER_PRIVATE_KEY, null, CALLBACK_URI,accessToken); 
+    	return  new AtlassianOAuthClient(CONSUMER_KEY, CONSUMER_PRIVATE_KEY, baseURL, CALLBACK_URI,accessToken); 
     }
     public void setBaseURL(String baseURL) {
 		this.baseURL = baseURL;
