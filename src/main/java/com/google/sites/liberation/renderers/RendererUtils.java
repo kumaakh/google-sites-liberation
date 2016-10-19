@@ -23,20 +23,20 @@ import static com.google.sites.liberation.util.EntryType.WEB_ATTACHMENT;
 import static com.google.sites.liberation.util.EntryType.getType;
 import static com.google.sites.liberation.util.EntryType.isPage;
 
-import com.google.gdata.data.OutOfLineContent;
-import com.google.gdata.data.Person;
-import com.google.gdata.data.TextConstruct;
-import com.google.gdata.data.sites.BaseContentEntry;
-import com.google.sites.liberation.util.EntryUtils;
-import com.google.sites.liberation.util.XmlElement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.DateTimeFormatterBuilder;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.gdata.data.OutOfLineContent;
+import com.google.gdata.data.Person;
+import com.google.gdata.data.TextConstruct;
+import com.google.gdata.data.sites.BaseContentEntry;
+import com.google.sites.liberation.util.EntryUtils;
+import com.google.sites.liberation.util.XmlElement;
 
 /**
  * Provides utility methods to construct various XmlElement's.
@@ -68,9 +68,9 @@ final class RendererUtils {
     Person author = entry.getAuthors().get(0);
     String name = author.getName();
     String email = author.getEmail();
-    if (name == null) {
-      name = "[no name found]";
-    }
+//    if (name == null) {
+//      name = "[no name found]";
+//    }
     if (email == null) {
       email = "[no email found]";
     }
@@ -205,10 +205,24 @@ final class RendererUtils {
     checkNotNull(entry);
     XmlElement element = new XmlElement("abbr");
     element.setAttribute("class", "updated");
-    element.setAttribute("title", entry.getUpdated().toString());
+    element.setAttribute("title", entry.getUpdated().toUiString());
     DateTime jodaTime = new DateTime(entry.getUpdated().getValue(),
         DateTimeZone.UTC);
     element.addText(jodaTime.toString(formatter));
     return element;
+  }
+  
+  static XmlElement makeOldSiteRef(BaseContentEntry<?> entry) {
+	  XmlElement p= new XmlElement("abbr");
+	  XmlElement a= new XmlElement("a");	
+	  int rev=1;
+	  if(entry.getRevision()!=null) rev=entry.getRevision().getValue();
+	  a.setAttribute("href", entry.getHtmlLink().getHref());
+	  a.addText("Original");
+	  p.addElement(a);
+	  p.addText(" version ("+rev+") by ");
+	  p.addElement(getAuthorElement(entry));
+	  p.addText(" posted on "+entry.getEdited().toUiString()+".");
+	  return p;
   }
 }

@@ -46,8 +46,8 @@ public class ConflClient
     private String attachmentURL(String pageId){
     	return baseURL+"/rest/api/content/"+pageId+"/child/attachment";
     }
-    private String contentByIdURL(String pageId) throws UnsupportedEncodingException{
-    	return baseURL+"/rest/api/content/"+pageId+"?expand=body.storage";
+    private String contentByIdURL(String pageId,boolean expand) throws UnsupportedEncodingException{
+    	return baseURL+"/rest/api/content/"+pageId+((expand)?"?expand=body.storage":"");
     }
     private AtlassianOAuthClient client(){
     	return  new AtlassianOAuthClient(CONSUMER_KEY, CONSUMER_PRIVATE_KEY, baseURL, CALLBACK_URI,accessToken); 
@@ -114,7 +114,7 @@ public class ConflClient
     public String getPageContentById(String pageId) throws Exception
     {
     	
-		String url=contentByIdURL(pageId);
+		String url=contentByIdURL(pageId,true);
         String page= client().makeAuthenticatedRequest(url);
         handleErrors(new JSONObject(page));
         return page;
@@ -129,6 +129,16 @@ public class ConflClient
 		handleErrors(jsonPage);
 		return jsonPage.getString("id");
     }
+
+	public int updatePage(String pageId,int version ,String pageTitle, String bodyContent) throws Exception
+    {
+		String url=contentByIdURL(pageId,false);
+		String resp=client().makeAuthenticatedPut(url, makePageCotentRequest(version,pageTitle, bodyContent));
+		JSONObject jsonPage= new JSONObject(resp);
+		handleErrors(jsonPage);
+		return jsonPage.getJSONObject("version").getInt("number");
+    }
+	
 	/**
 	 * 
 	 * @param pageId
@@ -185,7 +195,21 @@ public class ConflClient
     	}
     	return attIds;
     }
-	
+	private String makePageCotentRequest(int version, String pageTitle, String bodyContent)throws Exception {
+		JSONObject req = new JSONObject();
+			JSONObject v = new JSONObject();
+			v.put("number", version);
+		req.put("version", v);
+		req.put("type", "page");
+		req.put("title", pageTitle);
+			JSONObject body = new JSONObject();
+			JSONObject storage = new JSONObject();
+				storage.put("value", bodyContent);
+				storage.put("representation", "storage");
+			body.put("storage", storage);
+		req.put("body", body);
+		return req.toString();
+	}
 	private String makePageCotentRequest(String parentId, String pageTitle,String bodyContent) throws Exception {
 
 		JSONObject req = new JSONObject();

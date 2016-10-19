@@ -32,6 +32,8 @@ import java.util.logging.Logger;
 
 import com.google.common.collect.Sets;
 import com.google.gdata.client.sites.SitesService;
+import com.google.gdata.data.PlainTextConstruct;
+import com.google.gdata.data.TextConstruct;
 import com.google.gdata.data.sites.AttachmentEntry;
 import com.google.gdata.data.sites.BaseContentEntry;
 import com.google.gdata.data.sites.BasePageEntry;
@@ -46,10 +48,10 @@ import com.google.sites.liberation.util.UrlUtils;
  * 
  * @author bsimon@google.com (Benjamin Simon)
  */
-final class SiteExporterImpl implements SiteExporter {
+final class ConfluenceSiteExporterImpl implements SiteExporter {
   
   private static final Logger LOGGER = Logger.getLogger(
-      SiteExporterImpl.class.getCanonicalName());
+      ConfluenceSiteExporterImpl.class.getCanonicalName());
   
   private final AbsoluteLinkConverter linkConverter;
   private final AppendableFactory appendableFactory;
@@ -63,7 +65,7 @@ final class SiteExporterImpl implements SiteExporter {
    * Creates a new SiteExporter with the given dependencies.
    */
   @Inject
-  SiteExporterImpl(AbsoluteLinkConverter linkConverter,
+  ConfluenceSiteExporterImpl(AbsoluteLinkConverter linkConverter,
       AppendableFactory appendableFactory,
       AttachmentDownloader attachmentDownloader,
       EntryStoreFactory entryStoreFactory,
@@ -82,7 +84,30 @@ final class SiteExporterImpl implements SiteExporter {
   @Override
   public void exportSiteContinue(String host,@Nullable String domain, String webspace, String tsCont,
 	      boolean exportRevisions, SitesService sitesService, File rootDirectory, 
-	      ProgressListener progressListener){}
+	      ProgressListener progressListener){
+	  
+	  InMemoryEntryStore entryStore = new InMemoryEntryStore(); 
+	  int totalEntries = fetchFromSites(host, domain, webspace, null, sitesService, rootDirectory, progressListener, entryStore);
+	  entryStore.load(tsCont);
+	  
+	  progressListener.setStatus("starting page contents updation...");
+	  try{
+	  URL siteUrl = UrlUtils.getSiteUrl(host, domain, webspace);
+	    ConflUpdateVisitor uv= new ConflUpdateVisitor(pageExporter,progressListener,totalEntries,siteUrl);
+	    uv.visit(entryStore);
+	    progressListener.setStatus("page updation complete");
+	  }
+	  catch(Exception ex)
+	  {
+		  LOGGER.log(Level.SEVERE,"Can not export due to",ex);
+	  }
+	  finally
+	  {
+		  progressListener.setStatus("overwrting serialized data...");
+		  entryStore.save(tsCont);
+	  }
+	  
+  }
   
   @Override
   public void exportSite(String host, @Nullable String domain, String webspace, 
@@ -96,21 +121,52 @@ final class SiteExporterImpl implements SiteExporter {
   public void exportSitePath(String host, @Nullable String domain, String webspace, String path,
       boolean exportRevisions, SitesService sitesService, File rootDirectory, 
       ProgressListener progressListener) {
-    checkNotNull(host, "host");
+	  
+	  InMemoryEntryStore entryStore = new InMemoryEntryStore(); 
+	  
+    int totalEntries = fetchFromSites(host, domain, webspace, path, sitesService, rootDirectory, progressListener, entryStore);
+    progressListener.setStatus("Starting upload to confluence");
+    try{
+    	URL siteUrl = UrlUtils.getSiteUrl(host, domain, webspace);
+  	    ConflUploadVisitor tv = new ConflUploadVisitor(attachmentDownloader, pageExporter, sitesService, rootDirectory,progressListener,totalEntries,siteUrl);
+  	    tv.setCreatePageContent(false); //create empty titles
+  	    tv.visit(entryStore);
+  	    progressListener.setStatus("page creation complete...starting page contents");
+  	    
+  	    ConflUpdateVisitor uv= new ConflUpdateVisitor(tv);
+  	    uv.visit(entryStore);
+  	    progressListener.setStatus("page updation complete");
+
+      }
+      catch(Exception ex)
+      {
+      	LOGGER.log(Level.SEVERE,"Can not export due to",ex);
+      	
+      }
+    finally{
+    	entryStore.save();
+    }
+
+    
+    
+  }
+
+protected int fetchFromSites(String host, String domain, String webspace, String path, SitesService sitesService, File rootDirectory,
+		ProgressListener progressListener, InMemoryEntryStore entryStore) {
+	checkNotNull(host, "host");
     checkNotNull(webspace, "webspace");
     checkNotNull(sitesService, "sitesService");
     checkNotNull(rootDirectory, "rootDirectory");
     checkNotNull(progressListener, "progressListener");
+    
+    
+    URL	feedUrl = UrlUtils.getFeedUrl(host, domain, webspace);
     Set<BaseContentEntry<?>> pages = Sets.newHashSet();
     Set<AttachmentEntry> attachments = Sets.newHashSet();
-    EntryStore entryStore = entryStoreFactory.newEntryStore();
-
-    URL	feedUrl = UrlUtils.getFeedUrl(host, domain, webspace);
-    URL siteUrl = UrlUtils.getSiteUrl(host, domain, webspace);
+    Set<String> pageTitles = Sets.newHashSet(); //check if we have name collisions
     
     progressListener.setStatus("Retrieving site data (this may take a few minutes).");
-    Iterable<BaseContentEntry<?>> entries = 
-        feedProvider.getEntries(feedUrl,path ,sitesService);
+    Iterable<BaseContentEntry<?>> entries = feedProvider.getEntries(feedUrl,path ,sitesService);
     int num = 1;
     for (BaseContentEntry<?> entry : entries) {
       if (entry != null) {
@@ -120,6 +176,7 @@ final class SiteExporterImpl implements SiteExporter {
         entryStore.addEntry(entry);
         if (isPage(entry)) {
           pages.add((BasePageEntry<?>) entry);
+          checkAndFixNameCollision(pageTitles,entry,progressListener);
         } else if (getType(entry) == ATTACHMENT) {
           // TODO(gk5885): remove extra cast for
           // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6302214
@@ -127,8 +184,7 @@ final class SiteExporterImpl implements SiteExporter {
         }
         else
         {
-            progressListener.setStatus("The class of page is not supported!"
-                  + "The class of page:" + entry.getClass());
+          //  progressListener.setStatus("The class of page is not supported! The class of page:" + entry.getClass());
         }
         num++;
       } else {
@@ -137,84 +193,21 @@ final class SiteExporterImpl implements SiteExporter {
     }
     
     int totalEntries = pages.size() + attachments.size();
-    if (totalEntries > 0) {  
-      int currentEntries = 0;
-      for (BaseContentEntry<?> page : pages) {
-        progressListener.setStatus("Exporting page: " 
-            + page.getTitle().getPlainText() + '.');
-        linkConverter.convertLinks(page, entryStore, siteUrl, false);
-        File relativePath = getPath(page, entryStore);
-        if (relativePath != null) {
-          File directory = new File(rootDirectory, relativePath.getPath());
-          directory.mkdirs();
-          exportPage(page, directory, entryStore, exportRevisions,siteUrl);
-          if (exportRevisions) {
-            revisionsExporter.exportRevisions(page, entryStore, directory, 
-                sitesService, siteUrl);
-          }
-        }
-        progressListener.setProgress(((double) ++currentEntries) / totalEntries);
-      }
-      for (AttachmentEntry attachment : attachments) {
-        progressListener.setStatus("Downloading attachment: " 
-            + attachment.getTitle().getPlainText() + '.');
-        downloadAttachment(attachment, rootDirectory, entryStore, sitesService);
-        progressListener.setProgress(((double) ++currentEntries) / totalEntries);
-      }
-      progressListener.setStatus("Export complete.");
-    } else {
-      progressListener.setStatus("No data returned. "
-          + "Can you get anything from " + feedUrl.toString()+".");
-    }
-  }
+    progressListener.setStatus("We have "+pages.size()+" with "+attachments.size()+" attachments.");
+	return totalEntries;
+}
   
-  private void exportPage(BaseContentEntry<?> page, File directory, 
-      EntryStore entryStore, boolean revisionsExported, URL siteUrl) {
-    File file = new File(directory, "index.html");
-    Appendable out = null;
-    try {
-      out = appendableFactory.getAppendable(file);
-      pageExporter.exportPage(page, entryStore, out, revisionsExported, siteUrl);
-    } catch (IOException e) {
-      LOGGER.log(Level.SEVERE, "Failed writing to file: " + file.getPath(), e);
-    } finally {
-      if (out instanceof Closeable) {
-        try {
-          ((Closeable) out).close();
-        } catch (IOException e) {
-          LOGGER.log(Level.SEVERE, "Failed closing file: " + file.getPath(), e);
-        }
-      }
-    }
-  }
-  
-  private void downloadAttachment(AttachmentEntry attachment, 
-      File rootDirectory, EntryStore entryStore, SitesService sitesService) {
-    BasePageEntry<?> parent = entryStore.getParent(attachment.getId());
-    if (parent != null) {
-      File relativePath = getPath(parent, entryStore);
-      if (relativePath != null) {
-        File folder = new File(rootDirectory, relativePath.getPath());
-        folder.mkdirs();
-        File file = new File(folder, attachment.getTitle().getPlainText());
-        attachmentDownloader.download(attachment, file, sitesService);
-      }
-    }
-  }
-  
-  /**
-   * Returns the site-relative folder path corresponding to the given page, or 
-   * {@code null} if any of the page's ancestors are missing.
-   */
-  private File getPath(BaseContentEntry<?> entry, EntryStore entryStore) {
-    String parentId = getParentId(entry);
-    if (parentId == null) {
-      return new File(((BasePageEntry<?>) entry).getPageName().getValue());
-    }
-    BasePageEntry<?> parent = (BasePageEntry<?>) entryStore.getEntry(parentId);
-    if (parent == null) {
-      return null;
-    }
-    return new File(getPath(parent, entryStore), ((BasePageEntry<?>) entry).getPageName().getValue());
+  private void checkAndFixNameCollision(Set<String> pageTitles, BaseContentEntry<?> entry, ProgressListener progressListener) {
+	  String orig=entry.getTitle().getPlainText();
+	  //progressListener.setStatus(orig);
+	  int i=1;
+	while(!pageTitles.add(entry.getTitle().getPlainText().toLowerCase()))
+	{
+		String newTitle=orig+"("+i+")";
+		progressListener.setStatus("duplicate title found trying "+newTitle);
+		PlainTextConstruct tc= new PlainTextConstruct(newTitle);
+		entry.setTitle(tc);
+		i++;
+	}
   }
 }

@@ -132,7 +132,7 @@ public class SiteExporterImplTest {
           will(returnValue(out));
       oneOf (linkConverter).convertLinks(page, entryStore, 
           new URL("https://host/a/domain/webspace"), false);
-      oneOf (pageExporter).exportPage(page, entryStore, out, true);
+      oneOf (pageExporter).exportPage(page, entryStore, out, true, null);
       oneOf (revisionsExporter).exportRevisions(page, entryStore, 
           new File("path/Page-1"), sitesService, 
           new URL("https://host/a/domain/webspace"));
@@ -176,7 +176,7 @@ public class SiteExporterImplTest {
           will(returnValue(out));
       oneOf (linkConverter).convertLinks(page, entryStore, 
           new URL("https://host/a/domain/webspace"), false);
-      oneOf (pageExporter).exportPage(page, entryStore, out, false);
+      oneOf (pageExporter).exportPage(page, entryStore, out, false, null);
     }});
     
     export(false);
@@ -253,8 +253,8 @@ public class SiteExporterImplTest {
           new URL("https://host/a/domain/webspace"), false);
       oneOf (linkConverter).convertLinks(page2, entryStore, 
           new URL("https://host/a/domain/webspace"), false);
-      oneOf (pageExporter).exportPage(page1, entryStore, out1, true);
-      oneOf (pageExporter).exportPage(page2, entryStore, out2, true);
+      oneOf (pageExporter).exportPage(page1, entryStore, out1, true, null);
+      oneOf (pageExporter).exportPage(page2, entryStore, out2, true, null);
       oneOf (revisionsExporter).exportRevisions(page1, entryStore,
           new File("path/Page-1"), sitesService, 
           new URL("https://host/a/domain/webspace"));

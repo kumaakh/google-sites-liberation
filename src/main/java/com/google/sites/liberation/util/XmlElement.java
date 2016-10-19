@@ -65,6 +65,21 @@ public class XmlElement {
     return this;
   }
   
+	public XmlElement getFirstChildElement() {
+		return (XmlElement) getFirstChild(ChildType.ELEMENT);
+	}
+	public XmlElement getFirstXMLChildElement() {
+		return (XmlElement) getFirstChild(ChildType.XML);
+	}
+
+	private Object getFirstChild(ChildType cType) {
+		for (Pair<Object, ChildType> p : children) {
+			if (p.second == cType)
+				return p.first;
+		}
+		return null;
+	}
+  
   /**
    * Adds a plain text child to this element. The String given is
    * automatically converted to xml-safe characters.

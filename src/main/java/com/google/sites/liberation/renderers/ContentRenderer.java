@@ -16,21 +16,25 @@
 
 package com.google.sites.liberation.renderers;
 
+import java.net.URL;
+
 import com.google.gdata.data.sites.BaseContentEntry;
-import com.google.gdata.data.sites.BasePageEntry;
 import com.google.inject.ImplementedBy;
+import com.google.sites.liberation.export.EntryStore;
 import com.google.sites.liberation.util.XmlElement;
+
+
 
 /**
  * Renders a page's main content.
  * 
  * @author bsimon@google.com (Benjamin Simon)
  */
-@ImplementedBy(ContentRendererImpl.class)
+@ImplementedBy(ConfluenceContentRendererImpl.class)
 public interface ContentRenderer {
 
   /**
    * Returns an XmlElement containing the given entry's xhtml content.
    */
-  XmlElement renderContent(BaseContentEntry<?> entry, boolean revisionsExported);
+  XmlElement renderContent(BaseContentEntry<?> entry, EntryStore store, boolean revisionsExported, URL siteURL);
 }

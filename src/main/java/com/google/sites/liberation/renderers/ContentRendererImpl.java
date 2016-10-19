@@ -16,8 +16,10 @@
 
 package com.google.sites.liberation.renderers;
 
+import java.net.URL;
+
 import com.google.gdata.data.sites.BaseContentEntry;
-import com.google.gdata.data.sites.BasePageEntry;
+import com.google.sites.liberation.export.EntryStore;
 import com.google.sites.liberation.util.XmlElement;
 
 /**
@@ -28,8 +30,8 @@ import com.google.sites.liberation.util.XmlElement;
 final class ContentRendererImpl implements ContentRenderer {
 
   @Override
-  public XmlElement renderContent(BaseContentEntry<?> entry, 
-      boolean revisionsExported) {
+  public XmlElement renderContent(BaseContentEntry<?> entry, EntryStore store,
+      boolean revisionsExported, URL siteURL) {
     XmlElement div = new XmlElement("div");
     div.addElement(RendererUtils.getXhtmlContentElement(entry));
     div.addElement(new XmlElement("br"));

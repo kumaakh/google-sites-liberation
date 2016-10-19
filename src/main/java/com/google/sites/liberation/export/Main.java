@@ -19,6 +19,7 @@ package com.google.sites.liberation.export;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
@@ -71,6 +72,14 @@ public class Main {
   
   @Option(name="-h", usage="host")
   private String host = "sites.google.com";
+  
+  @Option(name="-p", usage="path restriction")
+  private String path = null;
+
+  @Option(name="-c", usage="timestamp for reading the .ser file for continuation ")
+  private String tsCont = null;
+  
+  
   
   
   /**
@@ -148,9 +157,22 @@ public class Main {
               APPLICATION_NAME).build();
       
 	  sitesService.setOAuth2Credentials(credential);
-      
-      siteExporter.exportSite(host, domain, webspace, exportRevisions,
-          sitesService, directory, new StdOutProgressListener());
+	  
+	  if(tsCont!=null)
+	  {
+		  siteExporter.exportSiteContinue(host, domain, webspace,tsCont ,exportRevisions,
+    			  sitesService, directory, new StdOutProgressListener());
+	  }
+      else if(path==null)
+	  {
+    	  siteExporter.exportSite(host, domain, webspace, exportRevisions,
+    			  sitesService, directory, new StdOutProgressListener());
+	  }
+	  else
+	  {
+		  siteExporter.exportSitePath(host, domain, webspace, path,exportRevisions,
+		          sitesService, directory, new StdOutProgressListener());
+	  }
     } catch (CmdLineException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
       parser.printUsage(System.err);

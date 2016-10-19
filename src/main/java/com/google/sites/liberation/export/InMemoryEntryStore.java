@@ -19,19 +19,25 @@ package com.google.sites.liberation.export;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.sites.liberation.util.EntryType.isPage;
 
-import com.google.gdata.data.sites.BaseContentEntry;
-import com.google.gdata.data.sites.BasePageEntry;
-import com.google.sites.liberation.util.EntryUtils;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Sets;
-
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import com.google.gdata.data.sites.BaseContentEntry;
+import com.google.gdata.data.sites.BasePageEntry;
+import com.google.sites.liberation.util.EntryUtils;
 
 /**
  * An in-memory implementation of {@link EntryStore}.
@@ -46,15 +52,46 @@ final class InMemoryEntryStore implements EntryStore {
   private final Map<String, BaseContentEntry<?>> entries;
   private final Set<BasePageEntry<?>> topLevelEntries;
   private final Multimap<String, BaseContentEntry<?>> children;
+  private Map<String,NewPage> createdPages;
+  private Map<String,String> uploadedAttachments;
+	//e.g.  https://sites.google.com/a/mamigoinc.com/development/Home/Company -> <4784403,1>
   
   /**
    * Creates a new InMemoryEntryStore which provides constant time storage 
    * and retrieval of entries by id or parent id.
    */
-  InMemoryEntryStore() {
+  public InMemoryEntryStore() {
     entries = Maps.newHashMap();
     topLevelEntries = Sets.newHashSet();
     children = HashMultimap.create();
+    createdPages = Maps.newHashMap();
+    uploadedAttachments = Maps.newHashMap();
+  }
+
+  @Override
+  public NewPage addCreatedPage(BasePageEntry<?> entry, String newPageId, int version)
+  {
+	  return createdPages.put(entry.getHtmlLink().getHref(),new NewPage(newPageId, entry.getTitle().getPlainText(),version));
+  }
+  @Override
+  public NewPage getCreatedPage(BasePageEntry<?> entry)
+  {
+	  return createdPages.get(entry.getHtmlLink().getHref());
+  }
+  @Override
+  public NewPage getCreatedPage(String link)
+  {
+	  return createdPages.get(link);
+  }
+  @Override
+  public void addUploadedAttachment(String oldLink, String newLink)
+  {
+	  uploadedAttachments.put(oldLink, newLink);
+  }
+  @Override
+  public String getNewAttachmentLink(String oldLink)
+  {
+	  return uploadedAttachments.get(oldLink);
   }
 
   @Override
@@ -105,4 +142,37 @@ final class InMemoryEntryStore implements EntryStore {
   public Collection<BasePageEntry<?>> getTopLevelEntries() {
     return topLevelEntries;
   }
+
+	public void save() {
+		save(""+(new Date()).getTime());
+	}
+	public void save(String ts) {
+		try {
+			String fName = "progress_"+ts+".ser";
+			FileOutputStream fileOut = new FileOutputStream(fName);
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+			out.writeObject(createdPages);
+			out.writeObject(uploadedAttachments);
+			out.close();
+			fileOut.close();
+			System.out.printf("Serialized data is saved in " + fName);
+		} catch (IOException i) {
+			i.printStackTrace();
+		}
+	}
+  public void load(String ts){
+	  try {
+			String fName = "progress_"+ts+".ser";
+			FileInputStream fileIn = new FileInputStream(fName);
+			ObjectInputStream in = new ObjectInputStream(fileIn);
+			createdPages=(Map<String, NewPage>) in.readObject();
+			uploadedAttachments=(Map<String, String>) in.readObject();
+			in.close();
+			in.close();
+			System.out.printf("Serialized data loaded from " + fName);
+		} catch (Exception i) {
+			i.printStackTrace();
+		}
+  }
+  
 }

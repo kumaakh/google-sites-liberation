@@ -37,4 +37,6 @@ public interface FeedProvider {
    */
   Iterable<BaseContentEntry<?>> getEntries(URL feedUrl, 
       SitesService sitesService);
+  Iterable<BaseContentEntry<?>> getEntries(URL feedUrl, String path,
+	      SitesService sitesService);
 }

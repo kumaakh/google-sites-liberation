@@ -56,6 +56,7 @@ final class ContinuousContentFeed implements Iterable<BaseContentEntry<?>> {
   private final URL feedUrl;
   private final SitesService sitesService;
   private final int resultsPerRequest;
+  private final String path;
   
   /**
    * Creates a new instance of {@code ContinuousContentFeed} for the given
@@ -65,15 +66,22 @@ final class ContinuousContentFeed implements Iterable<BaseContentEntry<?>> {
    * in the feed at {@code feedUrl}.</p>
    */
   ContinuousContentFeed(URL feedUrl, EntryProvider entryProvider,
-      SitesService sitesService, int resultsPerRequest) {
+	      SitesService sitesService, int resultsPerRequest) {
+	   this(feedUrl,entryProvider,sitesService,resultsPerRequest,null);
+	  }
+  
+  ContinuousContentFeed(URL feedUrl, EntryProvider entryProvider,
+      SitesService sitesService, int resultsPerRequest, String path) {
     this.entryProvider = checkNotNull(entryProvider);
     this.feedUrl = checkNotNull(feedUrl);
     this.sitesService = checkNotNull(sitesService);
     checkArgument(resultsPerRequest > 0);
     this.resultsPerRequest = resultsPerRequest;
+    this.path=path;
   }
   
-  /**
+
+/**
    * Returns a new iterator of {@code BaseContentEntry}s for this feed. 
    * <p>
    * The iterator returned will iterate through all of the entries corresponding 
@@ -130,7 +138,11 @@ final class ContinuousContentFeed implements Iterable<BaseContentEntry<?>> {
      */
     private Pair<Iterator<BaseContentEntry<?>>, Integer>
         getEntries(int start, int num) {
-      Query query = new ContentQuery(feedUrl);
+    	ContentQuery query = new ContentQuery(feedUrl);
+      if(path!=null)
+      {
+    	  query.setPath(path);
+      }
       try {
         int numReturned = 0;
         Iterator<BaseContentEntry<?>> itr = Iterators.emptyIterator();

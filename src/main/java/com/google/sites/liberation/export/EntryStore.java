@@ -16,10 +16,11 @@
 
 package com.google.sites.liberation.export;
 
+import java.io.Serializable;
+import java.util.Collection;
+
 import com.google.gdata.data.sites.BaseContentEntry;
 import com.google.gdata.data.sites.BasePageEntry;
-
-import java.util.Collection;
 
 /**
  * Defines a data structure that can be used to store the
@@ -28,7 +29,21 @@ import java.util.Collection;
  * 
  * @author bsimon@google.com (Benjamin Simon)
  */
-interface EntryStore {
+public interface EntryStore {
+	
+	public static class NewPage implements Serializable{
+		
+		private static final long serialVersionUID = 165633926354923492L;
+		public NewPage(String id, String title, int version) {
+			super();
+			this.id = id;
+			this.title = title;
+			this.version = version;
+		}
+		public String id;
+		public String title;
+		public int version;
+	}
 
   /**
    * Stores the given content entry.
@@ -58,4 +73,11 @@ interface EntryStore {
    * store.
    */
   Collection<BasePageEntry<?>> getTopLevelEntries();
+  
+  NewPage addCreatedPage(BasePageEntry<?> entry, String newPageId, int version);
+  NewPage getCreatedPage(BasePageEntry<?> entry);
+  NewPage getCreatedPage(String link);
+  void addUploadedAttachment(String oldLink, String newLink);
+  String getNewAttachmentLink(String oldLink);
+  
 }

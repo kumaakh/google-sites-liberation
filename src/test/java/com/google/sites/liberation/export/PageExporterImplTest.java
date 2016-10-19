@@ -164,7 +164,7 @@ public class PageExporterImplTest {
         will(returnValue(new XmlElement("div")));
       oneOf (titleRenderer).renderTitle(entry); 
         will(returnValue(new XmlElement("div")));
-      oneOf (contentRenderer).renderContent(entry, false); 
+      oneOf (contentRenderer).renderContent(entry, null, false, null); 
         will(returnValue(new XmlElement("div")));
       oneOf (subpageLinksRenderer).renderSubpageLinks(with(equal(subpages))); 
         will(returnValue(new XmlElement("div")));
@@ -174,7 +174,7 @@ public class PageExporterImplTest {
         will(returnValue(new XmlElement("div")));
     }});
     
-    exporter.exportPage(entry, entryStore, out, false);
+    exporter.exportPage(entry, entryStore, out, false, null);
   }
 
   @Test
@@ -202,13 +202,13 @@ public class PageExporterImplTest {
     context.checking(new Expectations() {{
       oneOf (titleRenderer).renderTitle(entry); 
         will(returnValue(new XmlElement("div")));
-      oneOf (contentRenderer).renderContent(entry, true); 
+      oneOf (contentRenderer).renderContent(entry,null, true, null); 
         will(returnValue(new XmlElement("div")));
       oneOf (listRenderer).renderList(with(entry), with(equal(listItems))); 
         will(returnValue(new XmlElement("div")));
     }});
     
-    exporter.exportPage(entry, entryStore, out, true);
+    exporter.exportPage(entry, entryStore, out, true, null);
   }
   
   @Test
@@ -236,13 +236,13 @@ public class PageExporterImplTest {
     context.checking(new Expectations() {{
       oneOf (titleRenderer).renderTitle(entry); 
         will(returnValue(new XmlElement("div")));
-      oneOf (contentRenderer).renderContent(entry, false); 
+      oneOf (contentRenderer).renderContent(entry,null,  false, null); 
         will(returnValue(new XmlElement("div")));
       oneOf (fileCabinetRenderer).renderFileCabinet(with(equal(attachments))); 
         will(returnValue(new XmlElement("div")));
     }});
     
-    exporter.exportPage(entry, entryStore, out, false);
+    exporter.exportPage(entry, entryStore, out, false, null);
   }
   
   @Test
@@ -270,13 +270,13 @@ public class PageExporterImplTest {
     context.checking(new Expectations() {{
       oneOf (titleRenderer).renderTitle(entry); 
         will(returnValue(new XmlElement("div")));
-      oneOf (contentRenderer).renderContent(entry, true); 
+      oneOf (contentRenderer).renderContent(entry, null, true, null); 
         will(returnValue(new XmlElement("div")));
       oneOf (announcementsRenderer).renderAnnouncements(
           with(equal(announcements))); 
         will(returnValue(new XmlElement("div")));
     }});
     
-    exporter.exportPage(entry, entryStore, out, true);
+    exporter.exportPage(entry, entryStore, out, true, null);
   }
 }

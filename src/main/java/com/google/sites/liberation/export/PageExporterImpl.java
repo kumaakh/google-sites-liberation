@@ -22,6 +22,13 @@ import static com.google.sites.liberation.util.EntryType.FILE_CABINET_PAGE;
 import static com.google.sites.liberation.util.EntryType.LIST_PAGE;
 import static com.google.sites.liberation.util.EntryType.getType;
 
+import java.io.IOException;
+import java.net.URL;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gdata.data.sites.AnnouncementEntry;
@@ -42,12 +49,6 @@ import com.google.sites.liberation.renderers.SubpageLinksRenderer;
 import com.google.sites.liberation.renderers.TitleRenderer;
 import com.google.sites.liberation.util.EntryUtils;
 import com.google.sites.liberation.util.XmlElement;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Implements {@link PageExporter} to export a single page in a 
@@ -96,7 +97,7 @@ final class PageExporterImpl implements PageExporter {
   
   @Override
   public void exportPage(BaseContentEntry<?> entry, EntryStore entryStore,
-      Appendable out, boolean revisionsExported) throws IOException {
+      Appendable out, boolean revisionsExported, URL siteURL) throws IOException {
     checkNotNull(entry, "entry");
     checkNotNull(entryStore, "entryStore");
     checkNotNull(out, "out");
@@ -122,7 +123,7 @@ final class PageExporterImpl implements PageExporter {
       mainDiv.addElement(ancestorLinksRenderer.renderAncestorLinks(ancestors));      
     }
     mainDiv.addElement(titleRenderer.renderTitle(entry));
-    mainDiv.addElement(contentRenderer.renderContent(entry, revisionsExported));
+    mainDiv.addElement(contentRenderer.renderContent(entry,entryStore, revisionsExported, siteURL));
     List<AnnouncementEntry> announcements = Lists.newArrayList();
     List<BaseContentEntry<?>> attachments = Lists.newArrayList();
     List<CommentEntry> comments = Lists.newArrayList();

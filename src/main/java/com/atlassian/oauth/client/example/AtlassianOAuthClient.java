@@ -1,6 +1,12 @@
 package com.atlassian.oauth.client.example;
 
-import com.google.common.collect.ImmutableList;
+import static net.oauth.OAuth.OAUTH_VERIFIER;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import net.oauth.OAuth;
 import net.oauth.OAuthAccessor;
@@ -9,33 +15,20 @@ import net.oauth.OAuthMessage;
 import net.oauth.OAuthServiceProvider;
 import net.oauth.client.OAuthClient;
 import net.oauth.client.httpclient4.HttpClient4;
-import net.oauth.http.HttpMessage;
 import net.oauth.signature.RSA_SHA1;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
-import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
-import static net.oauth.OAuth.OAUTH_VERIFIER;
+import com.google.common.collect.ImmutableList;
 
 /**
  * @since v1.0
@@ -138,21 +131,35 @@ public class AtlassianOAuthClient
     public String makeAuthenticatedPost(String url, String body)
     {
     	StringEntity entity = new StringEntity(body, ContentType.APPLICATION_JSON);
-    	return makeAuthenticatedPost(url,entity,false);
+    	return makeAuthenticatedPost("POST",url,entity,false);
+    }
+    
+    public String makeAuthenticatedPut(String url, String body)
+    {
+    	StringEntity entity = new StringEntity(body, ContentType.APPLICATION_JSON);
+    	return makeAuthenticatedPost("PUT",url,entity,false);
     }
     
     public String makeAuthenticatedPostWithMultiPart(String url, HttpEntity multipartEntity)
     {
-    	return makeAuthenticatedPost(url,multipartEntity,true);
+    	return makeAuthenticatedPost("POST",url,multipartEntity,true);
     }
     
-    private String makeAuthenticatedPost(String url, HttpEntity entity, boolean disableXSRFCheck)
+    private String makeAuthenticatedPost(String method, String url, HttpEntity entity, boolean disableXSRFCheck)
     {
         try
         {
-            OAuthMessage request = accessor.newRequestMessage("POST", url, Collections.<Map.Entry<?, ?>>emptySet());
+            OAuthMessage request = accessor.newRequestMessage(method, url, Collections.<Map.Entry<?, ?>>emptySet());
             String authHeader=request.getAuthorizationHeader(baseUrl);
-            HttpPost postReq= new HttpPost(url);
+            HttpEntityEnclosingRequestBase postReq=null;
+            if("POST".equals(method)){
+            	postReq= new HttpPost(url);
+            }
+            else if("PUT".equals(method)){
+            	postReq= new HttpPut(url);
+            }else {
+            	throw new Exception("unsupported method "+method);
+            }
             postReq.addHeader("Authorization", authHeader);
             if(disableXSRFCheck) postReq.addHeader("X-Atlassian-Token", "nocheck");
             postReq.setEntity(entity);

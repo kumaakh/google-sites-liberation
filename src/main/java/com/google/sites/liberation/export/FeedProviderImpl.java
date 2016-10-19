@@ -46,6 +46,12 @@ final class FeedProviderImpl implements FeedProvider {
   public Iterable<BaseContentEntry<?>> getEntries(URL feedUrl, 
       SitesService sitesService) {
     return new ContinuousContentFeed(feedUrl, entryProvider, sitesService,
-        RESULTS_PER_REQUEST);
+        RESULTS_PER_REQUEST,null);
+  }
+  @Override
+  public Iterable<BaseContentEntry<?>> getEntries(URL feedUrl, String path,
+	      SitesService sitesService){
+	  return new ContinuousContentFeed(feedUrl,entryProvider, sitesService,RESULTS_PER_REQUEST,path);
+	  
   }
 }

@@ -17,6 +17,7 @@
 package com.google.sites.liberation.export;
 
 import java.io.IOException;
+import java.net.URL;
 
 import com.google.gdata.data.sites.BaseContentEntry;
 import com.google.inject.ImplementedBy;
@@ -26,7 +27,8 @@ import com.google.inject.ImplementedBy;
  * 
  * @author bsimon@google.com (Benjamin Simon)
  */
-@ImplementedBy(PageExporterImpl.class)
+//@ImplementedBy(PageExporterImpl.class)
+@ImplementedBy(ConfluencePageExporterImpl.class)
 interface PageExporter {
 
   /** 
@@ -39,5 +41,5 @@ interface PageExporter {
    *        (i.e. whether or not to link to a the version history file) 
    */
   void exportPage(BaseContentEntry<?> entry, EntryStore entryStore, Appendable out,
-      boolean revisionsExported) throws IOException;
+      boolean revisionsExported, URL siteURL) throws IOException;
 }
